@@ -8,31 +8,31 @@
 //
 // For product documentation, see: https://cloud.google.com/container-engine/
 //
-// Creating a client
+// # Creating a client
 //
 // Usage example:
 //
-//   import "google.golang.org/api/container/v1"
-//   ...
-//   ctx := context.Background()
-//   containerService, err := container.NewService(ctx)
+//	import "google.golang.org/api/container/v1"
+//	...
+//	ctx := context.Background()
+//	containerService, err := container.NewService(ctx)
 //
 // In this example, Google Application Default Credentials are used for authentication.
 //
 // For information on how to create and obtain Application Default Credentials, see https://developers.google.com/identity/protocols/application-default-credentials.
 //
-// Other authentication options
+// # Other authentication options
 //
 // To use an API key for authentication (note: some APIs do not support API keys), use option.WithAPIKey:
 //
-//   containerService, err := container.NewService(ctx, option.WithAPIKey("AIza..."))
+//	containerService, err := container.NewService(ctx, option.WithAPIKey("AIza..."))
 //
 // To use an OAuth token (e.g., a user token obtained via a three-legged OAuth flow), use option.WithTokenSource:
 //
-//   config := &oauth2.Config{...}
-//   // ...
-//   token, err := config.Exchange(ctx, ...)
-//   containerService, err := container.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
+//	config := &oauth2.Config{...}
+//	// ...
+//	token, err := config.Exchange(ctx, ...)
+//	containerService, err := container.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
 //
 // See https://godoc.org/google.golang.org/api/option/ for details on options.
 package container // import "google.golang.org/api/container/v1"
@@ -562,11 +562,11 @@ type AutoprovisioningNodePoolDefaults struct {
 	// platforms, such as minCpuPlatform: Intel Haswell or minCpuPlatform:
 	// Intel Sandy Bridge. For more information, read how to specify min CPU
 	// platform
-	// (https://cloud.google.com/compute/docs/instances/specify-min-cpu-platform)
+	// (https://cloud.google.com/compute/docs/instances/specify-min-cpu-platform).
 	// This field is deprecated, min_cpu_platform should be specified using
-	// cloud.google.com/requested-min-cpu-platform label selector on the
-	// pod. To unset the min cpu platform field pass "automatic" as field
-	// value.
+	// https://cloud.google.com/requested-min-cpu-platform label selector on
+	// the pod. To unset the min cpu platform field pass "automatic" as
+	// field value.
 	MinCpuPlatform string `json:"minCpuPlatform,omitempty"`
 
 	// OauthScopes: Scopes that are used by NAP when creating node pools.
@@ -638,8 +638,10 @@ func (s *BigQueryDestination) MarshalJSON() ([]byte, error) {
 
 // BinaryAuthorization: Configuration for Binary Authorization.
 type BinaryAuthorization struct {
-	// Enabled: Enable Binary Authorization for this cluster. If enabled,
-	// all container images will be validated by Binary Authorization.
+	// Enabled: This field is deprecated. Leave this unset and instead
+	// configure BinaryAuthorization using evaluation_mode. If
+	// evaluation_mode is set to anything other than
+	// EVALUATION_MODE_UNSPECIFIED, this field is ignored.
 	Enabled bool `json:"enabled,omitempty"`
 
 	// EvaluationMode: Mode of operation for binauthz policy evaluation.
@@ -1463,6 +1465,10 @@ type ClusterUpdate struct {
 	// "desired_node_pool_autoscaling" is specified and there is more than
 	// one node pool on the cluster.
 	DesiredNodePoolId string `json:"desiredNodePoolId,omitempty"`
+
+	// DesiredNodePoolLoggingConfig: The desired node pool logging
+	// configuration defaults for the cluster.
+	DesiredNodePoolLoggingConfig *NodePoolLoggingConfig `json:"desiredNodePoolLoggingConfig,omitempty"`
 
 	// DesiredNodeVersion: The Kubernetes version to change the nodes to
 	// (typically an upgrade). Users may specify either explicit versions
@@ -2904,6 +2910,40 @@ func (s *LoggingConfig) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+// LoggingVariantConfig: LoggingVariantConfig specifies the behaviour of
+// the logging component.
+type LoggingVariantConfig struct {
+	// Variant: Logging variant deployed on nodes.
+	//
+	// Possible values:
+	//   "VARIANT_UNSPECIFIED" - Default value. This shouldn't be used.
+	//   "DEFAULT" - default logging variant.
+	//   "MAX_THROUGHPUT" - maximum logging throughput variant.
+	Variant string `json:"variant,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Variant") to
+	// unconditionally include in API requests. By default, fields with
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Variant") to include in
+	// API requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *LoggingVariantConfig) MarshalJSON() ([]byte, error) {
+	type NoMethod LoggingVariantConfig
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // MaintenanceExclusionOptions: Represents the Maintenance exclusion
 // option.
 type MaintenanceExclusionOptions struct {
@@ -3631,6 +3671,9 @@ type NodeConfig struct {
 	// information.
 	LocalSsdCount int64 `json:"localSsdCount,omitempty"`
 
+	// LoggingConfig: Logging configuration.
+	LoggingConfig *NodePoolLoggingConfig `json:"loggingConfig,omitempty"`
+
 	// MachineType: The name of a Google Compute Engine machine type
 	// (https://cloud.google.com/compute/docs/machine-types) If unspecified,
 	// the default machine type is `e2-medium`.
@@ -3748,9 +3791,12 @@ func (s *NodeConfig) MarshalJSON() ([]byte, error) {
 
 // NodeConfigDefaults: Subset of NodeConfig message that has defaults.
 type NodeConfigDefaults struct {
-	// GcfsConfig: GCFS (Google Container File System, a.k.a. Riptide)
-	// options.
+	// GcfsConfig: GCFS (Google Container File System, also known as
+	// Riptide) options.
 	GcfsConfig *GcfsConfig `json:"gcfsConfig,omitempty"`
+
+	// LoggingConfig: Logging configuration for node pools.
+	LoggingConfig *NodePoolLoggingConfig `json:"loggingConfig,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "GcfsConfig") to
 	// unconditionally include in API requests. By default, fields with
@@ -4206,6 +4252,35 @@ type NodePoolDefaults struct {
 
 func (s *NodePoolDefaults) MarshalJSON() ([]byte, error) {
 	type NoMethod NodePoolDefaults
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// NodePoolLoggingConfig: NodePoolLoggingConfig specifies logging
+// configuration for nodepools.
+type NodePoolLoggingConfig struct {
+	// VariantConfig: Logging variant configuration.
+	VariantConfig *LoggingVariantConfig `json:"variantConfig,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "VariantConfig") to
+	// unconditionally include in API requests. By default, fields with
+	// empty or default values are omitted from API requests. However, any
+	// non-pointer, non-interface field appearing in ForceSendFields will be
+	// sent to the server regardless of whether the field is empty or not.
+	// This may be used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "VariantConfig") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *NodePoolLoggingConfig) MarshalJSON() ([]byte, error) {
+	type NoMethod NodePoolLoggingConfig
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -4763,8 +4838,8 @@ type ReservationAffinity struct {
 
 	// Key: Corresponds to the label key of a reservation resource. To
 	// target a SPECIFIC_RESERVATION by name, specify
-	// "googleapis.com/reservation-name" as the key and specify the name of
-	// your reservation as its value.
+	// "compute.googleapis.com/reservation-name" as the key and specify the
+	// name of your reservation as its value.
 	Key string `json:"key,omitempty"`
 
 	// Values: Corresponds to the label value(s) of reservation resource(s).
@@ -6329,6 +6404,9 @@ type UpdateNodePoolRequest struct {
 	// removed.
 	Locations []string `json:"locations,omitempty"`
 
+	// LoggingConfig: Logging configuration.
+	LoggingConfig *NodePoolLoggingConfig `json:"loggingConfig,omitempty"`
+
 	// Name: The name (project, location, cluster, node pool) of the node
 	// pool to update. Specified in the format
 	// `projects/*/locations/*/clusters/*/nodePools/*`.
@@ -6831,8 +6909,8 @@ type ProjectsAggregatedUsableSubnetworksListCall struct {
 // List: Lists subnetworks that are usable for creating clusters in a
 // project.
 //
-// - parent: The parent project where subnetworks are usable. Specified
-//   in the format `projects/*`.
+//   - parent: The parent project where subnetworks are usable. Specified
+//     in the format `projects/*`.
 func (r *ProjectsAggregatedUsableSubnetworksService) List(parent string) *ProjectsAggregatedUsableSubnetworksListCall {
 	c := &ProjectsAggregatedUsableSubnetworksListCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.parent = parent
@@ -7044,8 +7122,8 @@ type ProjectsLocationsGetServerConfigCall struct {
 // GetServerConfig: Returns configuration info about the Google
 // Kubernetes Engine service.
 //
-// - name: The name (project and location) of the server config to get,
-//   specified in the format `projects/*/locations/*`.
+//   - name: The name (project and location) of the server config to get,
+//     specified in the format `projects/*/locations/*`.
 func (r *ProjectsLocationsService) GetServerConfig(name string) *ProjectsLocationsGetServerConfigCall {
 	c := &ProjectsLocationsGetServerConfigCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -7220,9 +7298,9 @@ type ProjectsLocationsClustersCompleteIpRotationCall struct {
 
 // CompleteIpRotation: Completes master IP rotation.
 //
-// - name: The name (project, location, cluster name) of the cluster to
-//   complete IP rotation. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster name) of the cluster to
+//     complete IP rotation. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) CompleteIpRotation(name string, completeiprotationrequest *CompleteIPRotationRequest) *ProjectsLocationsClustersCompleteIpRotationCall {
 	c := &ProjectsLocationsClustersCompleteIpRotationCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -7372,8 +7450,8 @@ type ProjectsLocationsClustersCreateCall struct {
 // an entry is added to the project's global metadata indicating which
 // CIDR range the cluster is using.
 //
-// - parent: The parent (project and location) where the cluster will be
-//   created. Specified in the format `projects/*/locations/*`.
+//   - parent: The parent (project and location) where the cluster will be
+//     created. Specified in the format `projects/*/locations/*`.
 func (r *ProjectsLocationsClustersService) Create(parent string, createclusterrequest *CreateClusterRequest) *ProjectsLocationsClustersCreateCall {
 	c := &ProjectsLocationsClustersCreateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.parent = parent
@@ -7519,9 +7597,9 @@ type ProjectsLocationsClustersDeleteCall struct {
 // resources, are not deleted if they weren't present when the cluster
 // was initially created.
 //
-// - name: The name (project, location, cluster) of the cluster to
-//   delete. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster) of the cluster to
+//     delete. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) Delete(name string) *ProjectsLocationsClustersDeleteCall {
 	c := &ProjectsLocationsClustersDeleteCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -7696,9 +7774,9 @@ type ProjectsLocationsClustersGetCall struct {
 
 // Get: Gets the details of a specific cluster.
 //
-// - name: The name (project, location, cluster) of the cluster to
-//   retrieve. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster) of the cluster to
+//     retrieve. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) Get(name string) *ProjectsLocationsClustersGetCall {
 	c := &ProjectsLocationsClustersGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -7888,8 +7966,8 @@ type ProjectsLocationsClustersGetJwksCall struct {
 // JSON Web Key format. This API is not yet intended for general use,
 // and is not available for all clusters.
 //
-// - parent: The cluster (project, location, cluster name) to get keys
-//   for. Specified in the format `projects/*/locations/*/clusters/*`.
+//   - parent: The cluster (project, location, cluster name) to get keys
+//     for. Specified in the format `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) GetJwks(parent string) *ProjectsLocationsClustersGetJwksCall {
 	c := &ProjectsLocationsClustersGetJwksCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.parent = parent
@@ -8033,9 +8111,9 @@ type ProjectsLocationsClustersListCall struct {
 // List: Lists all clusters owned by a project in either the specified
 // zone or all zones.
 //
-// - parent: The parent (project and location) where the clusters will
-//   be listed. Specified in the format `projects/*/locations/*`.
-//   Location "-" matches all zones and all regions.
+//   - parent: The parent (project and location) where the clusters will
+//     be listed. Specified in the format `projects/*/locations/*`.
+//     Location "-" matches all zones and all regions.
 func (r *ProjectsLocationsClustersService) List(parent string) *ProjectsLocationsClustersListCall {
 	c := &ProjectsLocationsClustersListCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.parent = parent
@@ -8210,9 +8288,9 @@ type ProjectsLocationsClustersSetAddonsCall struct {
 
 // SetAddons: Sets the addons for a specific cluster.
 //
-// - name: The name (project, location, cluster) of the cluster to set
-//   addons. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster) of the cluster to set
+//     addons. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) SetAddons(name string, setaddonsconfigrequest *SetAddonsConfigRequest) *ProjectsLocationsClustersSetAddonsCall {
 	c := &ProjectsLocationsClustersSetAddonsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -8355,9 +8433,9 @@ type ProjectsLocationsClustersSetLegacyAbacCall struct {
 // SetLegacyAbac: Enables or disables the ABAC authorization mechanism
 // on a cluster.
 //
-// - name: The name (project, location, cluster name) of the cluster to
-//   set legacy abac. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster name) of the cluster to
+//     set legacy abac. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) SetLegacyAbac(name string, setlegacyabacrequest *SetLegacyAbacRequest) *ProjectsLocationsClustersSetLegacyAbacCall {
 	c := &ProjectsLocationsClustersSetLegacyAbacCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -8502,9 +8580,9 @@ type ProjectsLocationsClustersSetLocationsCall struct {
 // (https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters/update)
 // instead.
 //
-// - name: The name (project, location, cluster) of the cluster to set
-//   locations. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster) of the cluster to set
+//     locations. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) SetLocations(name string, setlocationsrequest *SetLocationsRequest) *ProjectsLocationsClustersSetLocationsCall {
 	c := &ProjectsLocationsClustersSetLocationsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -8646,9 +8724,9 @@ type ProjectsLocationsClustersSetLoggingCall struct {
 
 // SetLogging: Sets the logging service for a specific cluster.
 //
-// - name: The name (project, location, cluster) of the cluster to set
-//   logging. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster) of the cluster to set
+//     logging. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) SetLogging(name string, setloggingservicerequest *SetLoggingServiceRequest) *ProjectsLocationsClustersSetLoggingCall {
 	c := &ProjectsLocationsClustersSetLoggingCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -8790,9 +8868,9 @@ type ProjectsLocationsClustersSetMaintenancePolicyCall struct {
 
 // SetMaintenancePolicy: Sets the maintenance policy for a cluster.
 //
-// - name: The name (project, location, cluster name) of the cluster to
-//   set maintenance policy. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster name) of the cluster to
+//     set maintenance policy. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) SetMaintenancePolicy(name string, setmaintenancepolicyrequest *SetMaintenancePolicyRequest) *ProjectsLocationsClustersSetMaintenancePolicyCall {
 	c := &ProjectsLocationsClustersSetMaintenancePolicyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -8936,8 +9014,8 @@ type ProjectsLocationsClustersSetMasterAuthCall struct {
 // changing the admin password or a specific cluster, either via
 // password generation or explicitly setting the password.
 //
-// - name: The name (project, location, cluster) of the cluster to set
-//   auth. Specified in the format `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster) of the cluster to set
+//     auth. Specified in the format `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) SetMasterAuth(name string, setmasterauthrequest *SetMasterAuthRequest) *ProjectsLocationsClustersSetMasterAuthCall {
 	c := &ProjectsLocationsClustersSetMasterAuthCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -9079,9 +9157,9 @@ type ProjectsLocationsClustersSetMonitoringCall struct {
 
 // SetMonitoring: Sets the monitoring service for a specific cluster.
 //
-// - name: The name (project, location, cluster) of the cluster to set
-//   monitoring. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster) of the cluster to set
+//     monitoring. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) SetMonitoring(name string, setmonitoringservicerequest *SetMonitoringServiceRequest) *ProjectsLocationsClustersSetMonitoringCall {
 	c := &ProjectsLocationsClustersSetMonitoringCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -9223,9 +9301,9 @@ type ProjectsLocationsClustersSetNetworkPolicyCall struct {
 
 // SetNetworkPolicy: Enables or disables Network Policy for a cluster.
 //
-// - name: The name (project, location, cluster name) of the cluster to
-//   set networking policy. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster name) of the cluster to
+//     set networking policy. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) SetNetworkPolicy(name string, setnetworkpolicyrequest *SetNetworkPolicyRequest) *ProjectsLocationsClustersSetNetworkPolicyCall {
 	c := &ProjectsLocationsClustersSetNetworkPolicyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -9367,9 +9445,9 @@ type ProjectsLocationsClustersSetResourceLabelsCall struct {
 
 // SetResourceLabels: Sets labels on a cluster.
 //
-// - name: The name (project, location, cluster name) of the cluster to
-//   set labels. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster name) of the cluster to
+//     set labels. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) SetResourceLabels(name string, setlabelsrequest *SetLabelsRequest) *ProjectsLocationsClustersSetResourceLabelsCall {
 	c := &ProjectsLocationsClustersSetResourceLabelsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -9511,9 +9589,9 @@ type ProjectsLocationsClustersStartIpRotationCall struct {
 
 // StartIpRotation: Starts master IP rotation.
 //
-// - name: The name (project, location, cluster name) of the cluster to
-//   start IP rotation. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster name) of the cluster to
+//     start IP rotation. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) StartIpRotation(name string, startiprotationrequest *StartIPRotationRequest) *ProjectsLocationsClustersStartIpRotationCall {
 	c := &ProjectsLocationsClustersStartIpRotationCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -9655,9 +9733,9 @@ type ProjectsLocationsClustersUpdateCall struct {
 
 // Update: Updates the settings of a specific cluster.
 //
-// - name: The name (project, location, cluster) of the cluster to
-//   update. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster) of the cluster to
+//     update. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) Update(name string, updateclusterrequest *UpdateClusterRequest) *ProjectsLocationsClustersUpdateCall {
 	c := &ProjectsLocationsClustersUpdateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -9799,9 +9877,9 @@ type ProjectsLocationsClustersUpdateMasterCall struct {
 
 // UpdateMaster: Updates the master for a specific cluster.
 //
-// - name: The name (project, location, cluster) of the cluster to
-//   update. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - name: The name (project, location, cluster) of the cluster to
+//     update. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersService) UpdateMaster(name string, updatemasterrequest *UpdateMasterRequest) *ProjectsLocationsClustersUpdateMasterCall {
 	c := &ProjectsLocationsClustersUpdateMasterCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -9944,9 +10022,9 @@ type ProjectsLocationsClustersNodePoolsCompleteUpgradeCall struct {
 // CompleteUpgrade: CompleteNodePoolUpgrade will signal an on-going node
 // pool upgrade to complete.
 //
-// - name: The name (project, location, cluster, node pool id) of the
-//   node pool to complete upgrade. Specified in the format
-//   'projects/*/locations/*/clusters/*/nodePools/*'.
+//   - name: The name (project, location, cluster, node pool id) of the
+//     node pool to complete upgrade. Specified in the format
+//     `projects/*/locations/*/clusters/*/nodePools/*`.
 func (r *ProjectsLocationsClustersNodePoolsService) CompleteUpgrade(name string, completenodepoolupgraderequest *CompleteNodePoolUpgradeRequest) *ProjectsLocationsClustersNodePoolsCompleteUpgradeCall {
 	c := &ProjectsLocationsClustersNodePoolsCompleteUpgradeCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -10054,7 +10132,7 @@ func (c *ProjectsLocationsClustersNodePoolsCompleteUpgradeCall) Do(opts ...googl
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "The name (project, location, cluster, node pool id) of the node pool to complete upgrade. Specified in the format 'projects/*/locations/*/clusters/*/nodePools/*'.",
+	//       "description": "The name (project, location, cluster, node pool id) of the node pool to complete upgrade. Specified in the format `projects/*/locations/*/clusters/*/nodePools/*`.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/locations/[^/]+/clusters/[^/]+/nodePools/[^/]+$",
 	//       "required": true,
@@ -10088,9 +10166,9 @@ type ProjectsLocationsClustersNodePoolsCreateCall struct {
 
 // Create: Creates a node pool for a cluster.
 //
-// - parent: The parent (project, location, cluster name) where the node
-//   pool will be created. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - parent: The parent (project, location, cluster name) where the node
+//     pool will be created. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersNodePoolsService) Create(parent string, createnodepoolrequest *CreateNodePoolRequest) *ProjectsLocationsClustersNodePoolsCreateCall {
 	c := &ProjectsLocationsClustersNodePoolsCreateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.parent = parent
@@ -10231,9 +10309,9 @@ type ProjectsLocationsClustersNodePoolsDeleteCall struct {
 
 // Delete: Deletes a node pool from a cluster.
 //
-// - name: The name (project, location, cluster, node pool id) of the
-//   node pool to delete. Specified in the format
-//   `projects/*/locations/*/clusters/*/nodePools/*`.
+//   - name: The name (project, location, cluster, node pool id) of the
+//     node pool to delete. Specified in the format
+//     `projects/*/locations/*/clusters/*/nodePools/*`.
 func (r *ProjectsLocationsClustersNodePoolsService) Delete(name string) *ProjectsLocationsClustersNodePoolsDeleteCall {
 	c := &ProjectsLocationsClustersNodePoolsDeleteCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -10421,9 +10499,9 @@ type ProjectsLocationsClustersNodePoolsGetCall struct {
 
 // Get: Retrieves the requested node pool.
 //
-// - name: The name (project, location, cluster, node pool id) of the
-//   node pool to get. Specified in the format
-//   `projects/*/locations/*/clusters/*/nodePools/*`.
+//   - name: The name (project, location, cluster, node pool id) of the
+//     node pool to get. Specified in the format
+//     `projects/*/locations/*/clusters/*/nodePools/*`.
 func (r *ProjectsLocationsClustersNodePoolsService) Get(name string) *ProjectsLocationsClustersNodePoolsGetCall {
 	c := &ProjectsLocationsClustersNodePoolsGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -10624,9 +10702,9 @@ type ProjectsLocationsClustersNodePoolsListCall struct {
 
 // List: Lists the node pools for a cluster.
 //
-// - parent: The parent (project, location, cluster name) where the node
-//   pools will be listed. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - parent: The parent (project, location, cluster name) where the node
+//     pools will be listed. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersNodePoolsService) List(parent string) *ProjectsLocationsClustersNodePoolsListCall {
 	c := &ProjectsLocationsClustersNodePoolsListCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.parent = parent
@@ -10815,9 +10893,9 @@ type ProjectsLocationsClustersNodePoolsRollbackCall struct {
 // Rollback: Rolls back a previously Aborted or Failed NodePool upgrade.
 // This makes no changes if the last upgrade successfully completed.
 //
-// - name: The name (project, location, cluster, node pool id) of the
-//   node poll to rollback upgrade. Specified in the format
-//   `projects/*/locations/*/clusters/*/nodePools/*`.
+//   - name: The name (project, location, cluster, node pool id) of the
+//     node poll to rollback upgrade. Specified in the format
+//     `projects/*/locations/*/clusters/*/nodePools/*`.
 func (r *ProjectsLocationsClustersNodePoolsService) Rollback(name string, rollbacknodepoolupgraderequest *RollbackNodePoolUpgradeRequest) *ProjectsLocationsClustersNodePoolsRollbackCall {
 	c := &ProjectsLocationsClustersNodePoolsRollbackCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -10960,9 +11038,9 @@ type ProjectsLocationsClustersNodePoolsSetAutoscalingCall struct {
 // SetAutoscaling: Sets the autoscaling settings for the specified node
 // pool.
 //
-// - name: The name (project, location, cluster, node pool) of the node
-//   pool to set autoscaler settings. Specified in the format
-//   `projects/*/locations/*/clusters/*/nodePools/*`.
+//   - name: The name (project, location, cluster, node pool) of the node
+//     pool to set autoscaler settings. Specified in the format
+//     `projects/*/locations/*/clusters/*/nodePools/*`.
 func (r *ProjectsLocationsClustersNodePoolsService) SetAutoscaling(name string, setnodepoolautoscalingrequest *SetNodePoolAutoscalingRequest) *ProjectsLocationsClustersNodePoolsSetAutoscalingCall {
 	c := &ProjectsLocationsClustersNodePoolsSetAutoscalingCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -11104,9 +11182,9 @@ type ProjectsLocationsClustersNodePoolsSetManagementCall struct {
 
 // SetManagement: Sets the NodeManagement options for a node pool.
 //
-// - name: The name (project, location, cluster, node pool id) of the
-//   node pool to set management properties. Specified in the format
-//   `projects/*/locations/*/clusters/*/nodePools/*`.
+//   - name: The name (project, location, cluster, node pool id) of the
+//     node pool to set management properties. Specified in the format
+//     `projects/*/locations/*/clusters/*/nodePools/*`.
 func (r *ProjectsLocationsClustersNodePoolsService) SetManagement(name string, setnodepoolmanagementrequest *SetNodePoolManagementRequest) *ProjectsLocationsClustersNodePoolsSetManagementCall {
 	c := &ProjectsLocationsClustersNodePoolsSetManagementCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -11250,9 +11328,9 @@ type ProjectsLocationsClustersNodePoolsSetSizeCall struct {
 // used for all replicas, including future replicas created by modifying
 // NodePool.locations.
 //
-// - name: The name (project, location, cluster, node pool id) of the
-//   node pool to set size. Specified in the format
-//   `projects/*/locations/*/clusters/*/nodePools/*`.
+//   - name: The name (project, location, cluster, node pool id) of the
+//     node pool to set size. Specified in the format
+//     `projects/*/locations/*/clusters/*/nodePools/*`.
 func (r *ProjectsLocationsClustersNodePoolsService) SetSize(name string, setnodepoolsizerequest *SetNodePoolSizeRequest) *ProjectsLocationsClustersNodePoolsSetSizeCall {
 	c := &ProjectsLocationsClustersNodePoolsSetSizeCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -11395,9 +11473,9 @@ type ProjectsLocationsClustersNodePoolsUpdateCall struct {
 // Update: Updates the version and/or image type for the specified node
 // pool.
 //
-// - name: The name (project, location, cluster, node pool) of the node
-//   pool to update. Specified in the format
-//   `projects/*/locations/*/clusters/*/nodePools/*`.
+//   - name: The name (project, location, cluster, node pool) of the node
+//     pool to update. Specified in the format
+//     `projects/*/locations/*/clusters/*/nodePools/*`.
 func (r *ProjectsLocationsClustersNodePoolsService) Update(name string, updatenodepoolrequest *UpdateNodePoolRequest) *ProjectsLocationsClustersNodePoolsUpdateCall {
 	c := &ProjectsLocationsClustersNodePoolsUpdateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -11543,9 +11621,9 @@ type ProjectsLocationsClustersWellKnownGetOpenidConfigurationCall struct {
 // details. This API is not yet intended for general use, and is not
 // available for all clusters.
 //
-// - parent: The cluster (project, location, cluster name) to get the
-//   discovery document for. Specified in the format
-//   `projects/*/locations/*/clusters/*`.
+//   - parent: The cluster (project, location, cluster name) to get the
+//     discovery document for. Specified in the format
+//     `projects/*/locations/*/clusters/*`.
 func (r *ProjectsLocationsClustersWellKnownService) GetOpenidConfiguration(parent string) *ProjectsLocationsClustersWellKnownGetOpenidConfigurationCall {
 	c := &ProjectsLocationsClustersWellKnownGetOpenidConfigurationCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.parent = parent
@@ -11688,9 +11766,9 @@ type ProjectsLocationsOperationsCancelCall struct {
 
 // Cancel: Cancels the specified operation.
 //
-// - name: The name (project, location, operation id) of the operation
-//   to cancel. Specified in the format
-//   `projects/*/locations/*/operations/*`.
+//   - name: The name (project, location, operation id) of the operation
+//     to cancel. Specified in the format
+//     `projects/*/locations/*/operations/*`.
 func (r *ProjectsLocationsOperationsService) Cancel(name string, canceloperationrequest *CancelOperationRequest) *ProjectsLocationsOperationsCancelCall {
 	c := &ProjectsLocationsOperationsCancelCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -11832,9 +11910,9 @@ type ProjectsLocationsOperationsGetCall struct {
 
 // Get: Gets the specified operation.
 //
-// - name: The name (project, location, operation id) of the operation
-//   to get. Specified in the format
-//   `projects/*/locations/*/operations/*`.
+//   - name: The name (project, location, operation id) of the operation
+//     to get. Specified in the format
+//     `projects/*/locations/*/operations/*`.
 func (r *ProjectsLocationsOperationsService) Get(name string) *ProjectsLocationsOperationsGetCall {
 	c := &ProjectsLocationsOperationsGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -12023,9 +12101,9 @@ type ProjectsLocationsOperationsListCall struct {
 // List: Lists all operations in a project in a specific zone or all
 // zones.
 //
-// - parent: The parent (project and location) where the operations will
-//   be listed. Specified in the format `projects/*/locations/*`.
-//   Location "-" matches all zones and all regions.
+//   - parent: The parent (project and location) where the operations will
+//     be listed. Specified in the format `projects/*/locations/*`.
+//     Location "-" matches all zones and all regions.
 func (r *ProjectsLocationsOperationsService) List(parent string) *ProjectsLocationsOperationsListCall {
 	c := &ProjectsLocationsOperationsListCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.parent = parent
@@ -12202,14 +12280,14 @@ type ProjectsZonesGetServerconfigCall struct {
 // GetServerconfig: Returns configuration info about the Google
 // Kubernetes Engine service.
 //
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) to return
-//   operations for. This field has been deprecated and replaced by the
-//   name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) to return
+//     operations for. This field has been deprecated and replaced by the
+//     name field.
 func (r *ProjectsZonesService) GetServerconfig(projectId string, zone string) *ProjectsZonesGetServerconfigCall {
 	c := &ProjectsZonesGetServerconfigCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -12378,16 +12456,16 @@ type ProjectsZonesClustersAddonsCall struct {
 
 // Addons: Sets the addons for a specific cluster.
 //
-// - clusterId: Deprecated. The name of the cluster to upgrade. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to upgrade. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) Addons(projectId string, zone string, clusterId string, setaddonsconfigrequest *SetAddonsConfigRequest) *ProjectsZonesClustersAddonsCall {
 	c := &ProjectsZonesClustersAddonsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -12548,16 +12626,16 @@ type ProjectsZonesClustersCompleteIpRotationCall struct {
 
 // CompleteIpRotation: Completes master IP rotation.
 //
-// - clusterId: Deprecated. The name of the cluster. This field has been
-//   deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster. This field has been
+//     deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) CompleteIpRotation(projectId string, zone string, clusterId string, completeiprotationrequest *CompleteIPRotationRequest) *ProjectsZonesClustersCompleteIpRotationCall {
 	c := &ProjectsZonesClustersCompleteIpRotationCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -12725,14 +12803,14 @@ type ProjectsZonesClustersCreateCall struct {
 // an entry is added to the project's global metadata indicating which
 // CIDR range the cluster is using.
 //
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the parent field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the parent field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the parent field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the parent field.
 func (r *ProjectsZonesClustersService) Create(projectId string, zone string, createclusterrequest *CreateClusterRequest) *ProjectsZonesClustersCreateCall {
 	c := &ProjectsZonesClustersCreateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -12888,16 +12966,16 @@ type ProjectsZonesClustersDeleteCall struct {
 // resources, are not deleted if they weren't present when the cluster
 // was initially created.
 //
-// - clusterId: Deprecated. The name of the cluster to delete. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to delete. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) Delete(projectId string, zone string, clusterId string) *ProjectsZonesClustersDeleteCall {
 	c := &ProjectsZonesClustersDeleteCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -13062,16 +13140,16 @@ type ProjectsZonesClustersGetCall struct {
 
 // Get: Gets the details of a specific cluster.
 //
-// - clusterId: Deprecated. The name of the cluster to retrieve. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to retrieve. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) Get(projectId string, zone string, clusterId string) *ProjectsZonesClustersGetCall {
 	c := &ProjectsZonesClustersGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -13250,16 +13328,16 @@ type ProjectsZonesClustersLegacyAbacCall struct {
 // LegacyAbac: Enables or disables the ABAC authorization mechanism on a
 // cluster.
 //
-// - clusterId: Deprecated. The name of the cluster to update. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to update. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) LegacyAbac(projectId string, zone string, clusterId string, setlegacyabacrequest *SetLegacyAbacRequest) *ProjectsZonesClustersLegacyAbacCall {
 	c := &ProjectsZonesClustersLegacyAbacCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -13420,14 +13498,14 @@ type ProjectsZonesClustersListCall struct {
 // List: Lists all clusters owned by a project in either the specified
 // zone or all zones.
 //
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the parent field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides, or "-" for all zones. This field has been
-//   deprecated and replaced by the parent field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the parent field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides, or "-" for all zones. This field has been
+//     deprecated and replaced by the parent field.
 func (r *ProjectsZonesClustersService) List(projectId string, zone string) *ProjectsZonesClustersListCall {
 	c := &ProjectsZonesClustersListCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -13600,16 +13678,16 @@ type ProjectsZonesClustersLocationsCall struct {
 // (https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters/update)
 // instead.
 //
-// - clusterId: Deprecated. The name of the cluster to upgrade. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to upgrade. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) Locations(projectId string, zone string, clusterId string, setlocationsrequest *SetLocationsRequest) *ProjectsZonesClustersLocationsCall {
 	c := &ProjectsZonesClustersLocationsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -13770,16 +13848,16 @@ type ProjectsZonesClustersLoggingCall struct {
 
 // Logging: Sets the logging service for a specific cluster.
 //
-// - clusterId: Deprecated. The name of the cluster to upgrade. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to upgrade. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) Logging(projectId string, zone string, clusterId string, setloggingservicerequest *SetLoggingServiceRequest) *ProjectsZonesClustersLoggingCall {
 	c := &ProjectsZonesClustersLoggingCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -13940,16 +14018,16 @@ type ProjectsZonesClustersMasterCall struct {
 
 // Master: Updates the master for a specific cluster.
 //
-// - clusterId: Deprecated. The name of the cluster to upgrade. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to upgrade. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) Master(projectId string, zone string, clusterId string, updatemasterrequest *UpdateMasterRequest) *ProjectsZonesClustersMasterCall {
 	c := &ProjectsZonesClustersMasterCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -14110,16 +14188,16 @@ type ProjectsZonesClustersMonitoringCall struct {
 
 // Monitoring: Sets the monitoring service for a specific cluster.
 //
-// - clusterId: Deprecated. The name of the cluster to upgrade. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to upgrade. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) Monitoring(projectId string, zone string, clusterId string, setmonitoringservicerequest *SetMonitoringServiceRequest) *ProjectsZonesClustersMonitoringCall {
 	c := &ProjectsZonesClustersMonitoringCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -14280,16 +14358,16 @@ type ProjectsZonesClustersResourceLabelsCall struct {
 
 // ResourceLabels: Sets labels on a cluster.
 //
-// - clusterId: Deprecated. The name of the cluster. This field has been
-//   deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster. This field has been
+//     deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) ResourceLabels(projectId string, zone string, clusterId string, setlabelsrequest *SetLabelsRequest) *ProjectsZonesClustersResourceLabelsCall {
 	c := &ProjectsZonesClustersResourceLabelsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -14450,13 +14528,13 @@ type ProjectsZonesClustersSetMaintenancePolicyCall struct {
 
 // SetMaintenancePolicy: Sets the maintenance policy for a cluster.
 //
-// - clusterId: The name of the cluster to update.
-// - projectId: The Google Developers Console project ID or project
-//   number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-// - zone: The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides.
+//   - clusterId: The name of the cluster to update.
+//   - projectId: The Google Developers Console project ID or project
+//     number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//   - zone: The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides.
 func (r *ProjectsZonesClustersService) SetMaintenancePolicy(projectId string, zone string, clusterId string, setmaintenancepolicyrequest *SetMaintenancePolicyRequest) *ProjectsZonesClustersSetMaintenancePolicyCall {
 	c := &ProjectsZonesClustersSetMaintenancePolicyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -14619,16 +14697,16 @@ type ProjectsZonesClustersSetMasterAuthCall struct {
 // changing the admin password or a specific cluster, either via
 // password generation or explicitly setting the password.
 //
-// - clusterId: Deprecated. The name of the cluster to upgrade. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to upgrade. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) SetMasterAuth(projectId string, zone string, clusterId string, setmasterauthrequest *SetMasterAuthRequest) *ProjectsZonesClustersSetMasterAuthCall {
 	c := &ProjectsZonesClustersSetMasterAuthCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -14789,16 +14867,16 @@ type ProjectsZonesClustersSetNetworkPolicyCall struct {
 
 // SetNetworkPolicy: Enables or disables Network Policy for a cluster.
 //
-// - clusterId: Deprecated. The name of the cluster. This field has been
-//   deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster. This field has been
+//     deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) SetNetworkPolicy(projectId string, zone string, clusterId string, setnetworkpolicyrequest *SetNetworkPolicyRequest) *ProjectsZonesClustersSetNetworkPolicyCall {
 	c := &ProjectsZonesClustersSetNetworkPolicyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -14959,16 +15037,16 @@ type ProjectsZonesClustersStartIpRotationCall struct {
 
 // StartIpRotation: Starts master IP rotation.
 //
-// - clusterId: Deprecated. The name of the cluster. This field has been
-//   deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster. This field has been
+//     deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) StartIpRotation(projectId string, zone string, clusterId string, startiprotationrequest *StartIPRotationRequest) *ProjectsZonesClustersStartIpRotationCall {
 	c := &ProjectsZonesClustersStartIpRotationCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -15129,16 +15207,16 @@ type ProjectsZonesClustersUpdateCall struct {
 
 // Update: Updates the settings of a specific cluster.
 //
-// - clusterId: Deprecated. The name of the cluster to upgrade. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to upgrade. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersService) Update(projectId string, zone string, clusterId string, updateclusterrequest *UpdateClusterRequest) *ProjectsZonesClustersUpdateCall {
 	c := &ProjectsZonesClustersUpdateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -15301,18 +15379,18 @@ type ProjectsZonesClustersNodePoolsAutoscalingCall struct {
 // Autoscaling: Sets the autoscaling settings for the specified node
 // pool.
 //
-// - clusterId: Deprecated. The name of the cluster to upgrade. This
-//   field has been deprecated and replaced by the name field.
-// - nodePoolId: Deprecated. The name of the node pool to upgrade. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to upgrade. This
+//     field has been deprecated and replaced by the name field.
+//   - nodePoolId: Deprecated. The name of the node pool to upgrade. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersNodePoolsService) Autoscaling(projectId string, zone string, clusterId string, nodePoolId string, setnodepoolautoscalingrequest *SetNodePoolAutoscalingRequest) *ProjectsZonesClustersNodePoolsAutoscalingCall {
 	c := &ProjectsZonesClustersNodePoolsAutoscalingCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -15482,16 +15560,16 @@ type ProjectsZonesClustersNodePoolsCreateCall struct {
 
 // Create: Creates a node pool for a cluster.
 //
-// - clusterId: Deprecated. The name of the cluster. This field has been
-//   deprecated and replaced by the parent field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the parent field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the parent field.
+//   - clusterId: Deprecated. The name of the cluster. This field has been
+//     deprecated and replaced by the parent field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the parent field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the parent field.
 func (r *ProjectsZonesClustersNodePoolsService) Create(projectId string, zone string, clusterId string, createnodepoolrequest *CreateNodePoolRequest) *ProjectsZonesClustersNodePoolsCreateCall {
 	c := &ProjectsZonesClustersNodePoolsCreateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -15652,18 +15730,18 @@ type ProjectsZonesClustersNodePoolsDeleteCall struct {
 
 // Delete: Deletes a node pool from a cluster.
 //
-// - clusterId: Deprecated. The name of the cluster. This field has been
-//   deprecated and replaced by the name field.
-// - nodePoolId: Deprecated. The name of the node pool to delete. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster. This field has been
+//     deprecated and replaced by the name field.
+//   - nodePoolId: Deprecated. The name of the node pool to delete. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersNodePoolsService) Delete(projectId string, zone string, clusterId string, nodePoolId string) *ProjectsZonesClustersNodePoolsDeleteCall {
 	c := &ProjectsZonesClustersNodePoolsDeleteCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -15838,18 +15916,18 @@ type ProjectsZonesClustersNodePoolsGetCall struct {
 
 // Get: Retrieves the requested node pool.
 //
-// - clusterId: Deprecated. The name of the cluster. This field has been
-//   deprecated and replaced by the name field.
-// - nodePoolId: Deprecated. The name of the node pool. This field has
-//   been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster. This field has been
+//     deprecated and replaced by the name field.
+//   - nodePoolId: Deprecated. The name of the node pool. This field has
+//     been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersNodePoolsService) Get(projectId string, zone string, clusterId string, nodePoolId string) *ProjectsZonesClustersNodePoolsGetCall {
 	c := &ProjectsZonesClustersNodePoolsGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -16036,16 +16114,16 @@ type ProjectsZonesClustersNodePoolsListCall struct {
 
 // List: Lists the node pools for a cluster.
 //
-// - clusterId: Deprecated. The name of the cluster. This field has been
-//   deprecated and replaced by the parent field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the parent field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the parent field.
+//   - clusterId: Deprecated. The name of the cluster. This field has been
+//     deprecated and replaced by the parent field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the parent field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the parent field.
 func (r *ProjectsZonesClustersNodePoolsService) List(projectId string, zone string, clusterId string) *ProjectsZonesClustersNodePoolsListCall {
 	c := &ProjectsZonesClustersNodePoolsListCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -16225,18 +16303,18 @@ type ProjectsZonesClustersNodePoolsRollbackCall struct {
 // Rollback: Rolls back a previously Aborted or Failed NodePool upgrade.
 // This makes no changes if the last upgrade successfully completed.
 //
-// - clusterId: Deprecated. The name of the cluster to rollback. This
-//   field has been deprecated and replaced by the name field.
-// - nodePoolId: Deprecated. The name of the node pool to rollback. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to rollback. This
+//     field has been deprecated and replaced by the name field.
+//   - nodePoolId: Deprecated. The name of the node pool to rollback. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersNodePoolsService) Rollback(projectId string, zone string, clusterId string, nodePoolId string, rollbacknodepoolupgraderequest *RollbackNodePoolUpgradeRequest) *ProjectsZonesClustersNodePoolsRollbackCall {
 	c := &ProjectsZonesClustersNodePoolsRollbackCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -16407,18 +16485,18 @@ type ProjectsZonesClustersNodePoolsSetManagementCall struct {
 
 // SetManagement: Sets the NodeManagement options for a node pool.
 //
-// - clusterId: Deprecated. The name of the cluster to update. This
-//   field has been deprecated and replaced by the name field.
-// - nodePoolId: Deprecated. The name of the node pool to update. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to update. This
+//     field has been deprecated and replaced by the name field.
+//   - nodePoolId: Deprecated. The name of the node pool to update. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersNodePoolsService) SetManagement(projectId string, zone string, clusterId string, nodePoolId string, setnodepoolmanagementrequest *SetNodePoolManagementRequest) *ProjectsZonesClustersNodePoolsSetManagementCall {
 	c := &ProjectsZonesClustersNodePoolsSetManagementCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -16591,18 +16669,18 @@ type ProjectsZonesClustersNodePoolsSetSizeCall struct {
 // used for all replicas, including future replicas created by modifying
 // NodePool.locations.
 //
-// - clusterId: Deprecated. The name of the cluster to update. This
-//   field has been deprecated and replaced by the name field.
-// - nodePoolId: Deprecated. The name of the node pool to update. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to update. This
+//     field has been deprecated and replaced by the name field.
+//   - nodePoolId: Deprecated. The name of the node pool to update. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersNodePoolsService) SetSize(projectId string, zone string, clusterId string, nodePoolId string, setnodepoolsizerequest *SetNodePoolSizeRequest) *ProjectsZonesClustersNodePoolsSetSizeCall {
 	c := &ProjectsZonesClustersNodePoolsSetSizeCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -16774,18 +16852,18 @@ type ProjectsZonesClustersNodePoolsUpdateCall struct {
 // Update: Updates the version and/or image type for the specified node
 // pool.
 //
-// - clusterId: Deprecated. The name of the cluster to upgrade. This
-//   field has been deprecated and replaced by the name field.
-// - nodePoolId: Deprecated. The name of the node pool to upgrade. This
-//   field has been deprecated and replaced by the name field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - clusterId: Deprecated. The name of the cluster to upgrade. This
+//     field has been deprecated and replaced by the name field.
+//   - nodePoolId: Deprecated. The name of the node pool to upgrade. This
+//     field has been deprecated and replaced by the name field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesClustersNodePoolsService) Update(projectId string, zone string, clusterId string, nodePoolId string, updatenodepoolrequest *UpdateNodePoolRequest) *ProjectsZonesClustersNodePoolsUpdateCall {
 	c := &ProjectsZonesClustersNodePoolsUpdateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -16955,17 +17033,17 @@ type ProjectsZonesOperationsCancelCall struct {
 
 // Cancel: Cancels the specified operation.
 //
-// - operationId: Deprecated. The server-assigned `name` of the
-//   operation. This field has been deprecated and replaced by the name
-//   field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the operation resides. This field has been deprecated and replaced
-//   by the name field.
+//   - operationId: Deprecated. The server-assigned `name` of the
+//     operation. This field has been deprecated and replaced by the name
+//     field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the operation resides. This field has been deprecated and replaced
+//     by the name field.
 func (r *ProjectsZonesOperationsService) Cancel(projectId string, zone string, operationId string, canceloperationrequest *CancelOperationRequest) *ProjectsZonesOperationsCancelCall {
 	c := &ProjectsZonesOperationsCancelCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -17126,17 +17204,17 @@ type ProjectsZonesOperationsGetCall struct {
 
 // Get: Gets the specified operation.
 //
-// - operationId: Deprecated. The server-assigned `name` of the
-//   operation. This field has been deprecated and replaced by the name
-//   field.
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the name field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) in which
-//   the cluster resides. This field has been deprecated and replaced by
-//   the name field.
+//   - operationId: Deprecated. The server-assigned `name` of the
+//     operation. This field has been deprecated and replaced by the name
+//     field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the name field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) in which
+//     the cluster resides. This field has been deprecated and replaced by
+//     the name field.
 func (r *ProjectsZonesOperationsService) Get(projectId string, zone string, operationId string) *ProjectsZonesOperationsGetCall {
 	c := &ProjectsZonesOperationsGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -17314,14 +17392,14 @@ type ProjectsZonesOperationsListCall struct {
 // List: Lists all operations in a project in a specific zone or all
 // zones.
 //
-// - projectId: Deprecated. The Google Developers Console project ID or
-//   project number
-//   (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
-//   This field has been deprecated and replaced by the parent field.
-// - zone: Deprecated. The name of the Google Compute Engine zone
-//   (https://cloud.google.com/compute/docs/zones#available) to return
-//   operations for, or `-` for all zones. This field has been
-//   deprecated and replaced by the parent field.
+//   - projectId: Deprecated. The Google Developers Console project ID or
+//     project number
+//     (https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+//     This field has been deprecated and replaced by the parent field.
+//   - zone: Deprecated. The name of the Google Compute Engine zone
+//     (https://cloud.google.com/compute/docs/zones#available) to return
+//     operations for, or `-` for all zones. This field has been
+//     deprecated and replaced by the parent field.
 func (r *ProjectsZonesOperationsService) List(projectId string, zone string) *ProjectsZonesOperationsListCall {
 	c := &ProjectsZonesOperationsListCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
